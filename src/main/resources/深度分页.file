@@ -1,0 +1,335 @@
+DELETE /goods
+
+GET /_cat/indices?v
+
+GET  /goods/_analyze
+{
+"analyzer":"suggestIndexAnalyzer",
+"text":"商城"
+}
+
+
+PUT /goods
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "edge_ngram_filter": {
+          "type": "edge_ngram",
+          "min_gram": 1,
+          "max_gram": 20,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
+        },
+        "pinyin_filter": {
+          "type": "pinyin",
+          "keep_first_letter": true,
+          "keep_separate_first_letter": true,
+          "keep_full_pinyin": true,
+          "keep_none_chinese": true,
+          "keep_original": true,
+          "limit_first_letter_length": 16,
+          "lowercase": true,
+          "trim_whitespace": true,
+          "keep_none_chinese_in_first_letter": true
+        },
+        "simple_pinyin_filter": {
+          "type": "pinyin",
+          "keep_joined_full_pinyin": "false",
+          "lowercase": "true",
+          "limit_first_letter_length": "50",
+          "remove_duplicated_term": "true",
+          "keep_separate_first_letter": "true",
+          "keep_original": "true",
+          "keep_first_letter": "true",
+          "keep_full_pinyin": "false",
+          "none_chinese_pinyin_tokenize": "false",
+          "keep_none_chinese": "false",
+          "keep_none_chinese_together": "false"
+        },
+        "full_pinyin_filter": {
+          "type": "pinyin",
+          "keep_separate_first_letter": "true",
+          "keep_first_letter": "false",
+          "keep_full_pinyin": "true",
+          "keep_none_chinese": "true",
+          "keep_original": "true",
+          "limit_first_letter_length": 50,
+          "lowercase": true,
+          "trim_whitespace": true,
+          "keep_none_chinese_in_first_letter": true,
+          "keep_joined_full_pinyin": "true",
+          "remove_duplicated_term": "true",
+          "none_chinese_pinyin_tokenize": "true",
+          "keep_none_chinese_together": "true"
+        }
+      },
+      "char_filter": {
+        "tsconvert": {
+          "type": "stconvert",
+          "convert_type": "t2s"
+        }
+      },
+      "analyzer": {
+        "ngramIndexAnalyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "edge_ngram_filter",
+            "lowercase"
+          ],
+          "char_filter": [
+            "tsconvert"
+          ]
+        },
+        "ngramSearchAnalyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase"
+          ],
+          "char_filter": [
+            "tsconvert"
+          ]
+        },
+        "ikIndexAnalyzer": {
+          "type": "custom",
+          "tokenizer": "ik_max_word",
+          "char_filter": [
+            "tsconvert"
+          ]
+        },
+        "ikSearchAnalyzer": {
+          "type": "custom",
+          "tokenizer": "ik_max_word",
+          "char_filter": [
+            "tsconvert"
+          ]
+        },
+        "simplePinyinIndexAnalyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "simple_pinyin_filter",
+            "edge_ngram_filter",
+            "lowercase"
+          ]
+        },
+        "simplePinyinSearchAnalyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "simple_pinyin_filter",
+            "lowercase"
+          ]
+        },
+        "fullPinyinIndexAnalyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "full_pinyin_filter",
+            "edge_ngram_filter",
+            "lowercase"
+          ]
+        },
+        "fullPinyinSearchAnalyzer": {
+          "tokenizer": "standard",
+          "filter": [
+            "full_pinyin_filter",
+            "lowercase"
+          ]
+        },
+        "suggestIndexAnalyzer": {
+          "tokenizer": "ik_max_word",
+          "filter": [
+            "pinyin_filter",
+            "edge_ngram_filter",
+            "lowercase"
+          ]
+        },
+        "suggestSearchAnalyzer": {
+          "tokenizer": "ik_max_word",
+          "filter": [
+            "pinyin_filter",
+             "lowercase"
+          ]
+        }
+
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "_class": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "fields": {
+          "ik": {
+            "type": "text",
+            "analyzer": "ikIndexAnalyzer",
+            "search_analyzer": "ikSearchAnalyzer"
+          },
+          "ngram": {
+            "type": "text",
+            "analyzer": "ngramIndexAnalyzer",
+            "search_analyzer": "ngramSearchAnalyzer"
+          },
+          "full_pinyin": {
+            "type": "text",
+            "analyzer": "fullPinyinIndexAnalyzer",
+            "search_analyzer": "fullPinyinSearchAnalyzer"
+          },
+          "simple_pinyin": {
+            "type": "text",
+            "analyzer": "simplePinyinIndexAnalyzer",
+            "search_analyzer": "simplePinyinSearchAnalyzer"
+          }
+        }
+      },
+      "title_suggest": {
+        "type": "completion",
+        "analyzer": "suggestIndexAnalyzer",
+        "search_analyzer": "suggestSearchAnalyzer",
+        "preserve_separators": false,
+        "preserve_position_increments": true,
+        "max_input_length": 20
+      },
+      "attrs": {
+        "type": "nested",
+        "properties": {
+          "attrId": {
+            "type": "long"
+          },
+          "attrName": {
+            "type": "keyword"
+          },
+          "attrValue": {
+            "type": "keyword"
+          }
+        }
+      },
+      "brandId": {
+        "type": "long"
+      },
+      "brandName": {
+        "type": "keyword"
+      },
+      "categoryId": {
+        "type": "long"
+      },
+      "categoryName": {
+        "type": "keyword"
+      },
+      "createTime": {
+        "type": "date"
+      },
+      "pic": {
+        "type": "keyword",
+        "index": false
+      },
+      "price": {
+        "type": "double"
+      },
+      "sales": {
+        "type": "long"
+      },
+      "skuId": {
+        "type": "long"
+      },
+      "store": {
+        "type": "boolean"
+      }
+    }
+  }
+}
+
+
+
+POST /goods/_doc/1
+{"brandName": "全友1","categoryName":"家具"}
+
+POST /goods/_doc/2
+{"brandName": "全友2","categoryName":"家具"}
+
+POST /goods/_doc/3
+{"brandName": "全友3","categoryName":"家具"}
+
+
+POST /goods/_doc/4
+{"brandName": "全友4","categoryName":"家具"}
+
+POST /goods/_doc/5
+{"brandName": "全友5","categoryName":"家具"}
+
+
+
+分页参考文档地址
+https://www.cnblogs.com/hello-shf/p/11543453.html
+https://blog.csdn.net/andybegin/article/details/83864171
+https://esdoc.bbossgroups.com/#/search-after
+
+#from + size 浅分页
+POST /goods/_search
+{
+  "query": {
+    "term": {
+      "categoryName": {
+        "value": "家具"
+      }
+    }
+  },
+  "from": 0,
+  "size": 3
+}
+
+
+
+
+#search_after  深分页
+POST /goods/_search
+{
+  "query": {
+    "term": {
+      "categoryName": {
+        "value": "家具"
+      }
+    }
+  },
+  "from": 0,
+  "size": 3,
+  "sort": [
+    {
+      "_id": {
+        "order": "asc"
+      }
+    }
+  ]
+}
+
+
+
+#在返回的最后一条数据里拿到sort属性的值传入到search_after
+POST /goods/_search
+{
+  "query": {
+    "term": {
+      "categoryName": {
+        "value": "家具"
+      }
+    }
+  },
+  "from": 0,
+  "size": 3,
+  "sort": [
+    {
+      "_id": {
+        "order": "asc"
+      }
+    }
+  ],
+  "search_after": [
+    3
+  ]
+}

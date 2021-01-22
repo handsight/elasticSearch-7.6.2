@@ -1,0 +1,218 @@
+DELETE /test
+
+GET /_cat/indices?v
+
+
+PUT /test
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "_class": {
+        "type": "keyword"
+      },
+      "location": {
+        "type": "geo_point"
+      }
+    }
+  }
+}
+
+#第一个纬度,第二个经度
+POST test/_doc/1
+{
+  "location":{
+    "lat":12,
+    "lon":24
+  }
+}
+
+POST test/_doc/2
+{
+  "location":{
+    "lat":15,
+    "lon":25
+  }
+}
+
+
+
+#根据给定两个点组成的矩形，查询矩形内的点
+GET test/_search
+{
+  "query": {
+    "geo_bounding_box": {
+      "location": {
+        "top_left": {
+          "lat": 28,
+          "lon": 10
+        },
+        "bottom_right": {
+          "lat": 10,
+          "lon": 30
+        }
+      }
+    }
+  }
+}
+
+
+#根据给定的多个点组成的多边形，查询范围内的点
+GET test/_search
+{
+  "query": {
+    "geo_polygon": {
+      "location": {
+        "points": [
+          {
+            "lat": 11,
+            "lon": 25
+          },
+          {
+            "lat": 13,
+            "lon": 25
+          },
+          {
+            "lat": 13,
+            "lon": 23
+          },
+          {
+            "lat": 11,
+            "lon": 23
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+#查询给定1000KM距离范围内的点
+
+GET test/_search
+{
+  "query": {
+    "geo_distance": {
+      "distance": "1000km",
+      "location": {
+        "lat": 12,
+        "lon": 23
+      }
+    }
+  }
+}
+
+#查询距离范围区间内的点的数量
+#举例我当前坐标的几个范围内的酒店的数量，比如说举例我0~100m有几个酒店，100m~300m有几个酒店，300m以上有几个酒店
+GET test/_search
+{
+  "size": 0,
+  "aggs": {
+    "myaggs": {
+      "geo_distance": {
+        "field": "location",
+        "origin": {
+          "lat": 12,
+          "lon": 24
+        },
+        "unit": "km",
+        "ranges": [
+           {
+            "to": 100
+          },
+          {
+            "from": 100,
+            "to": 300
+          },
+          {
+            "from": 300
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+#解读以下: (注意看sort对象)
+
+#计算每个文档中 location 字段与指定的 lat/lon 点间的距离。
+#将距离以 km 为单位写入到每个返回结果的 sort 键中。
+#使用快速但精度略差的 plane 计算方式。
+GET /test/_search
+{
+  "query": {
+    "geo_bounding_box": {
+      "type": "indexed",
+      "location": {
+        "top_left": {
+          "lat": 28,
+          "lon": 10
+        },
+        "bottom_right": {
+          "lat": 10,
+          "lon": 30
+        }
+      }
+    }
+  },
+  "sort": [
+    {
+      "_geo_distance": {
+        "location": {
+          "lat": 12,
+          "lon": 24
+        },
+        "order": "asc",
+        "unit": "km",
+        "distance_type": "plane"
+      }
+    }
+  ]
+}
+
+
+#以北纬30.30,东经120.24为坐标点,搜索附近100千米内 ,年龄大于等18岁, 小于25岁的人
+GET /test/_search
+{
+  "from": 0,
+  "size": 10,
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "geo_distance": {
+            "location": [
+              24,
+              12
+            ],
+            "distance": 1000000,
+            "distance_type": "arc",
+            "validation_method": "STRICT",
+            "ignore_unmapped": false,
+            "boost": 1
+          }
+        }
+      ],
+      "adjust_pure_negative": true,
+      "boost": 1
+    }
+  },
+  "sort": [
+    {
+      "_geo_distance": {
+        "location": [
+          {
+            "lat": 12,
+            "lon": 24
+          }
+        ],
+        "unit": "km",
+        "distance_type": "plane",
+        "order": "asc",
+        "validation_method": "STRICT",
+        "ignore_unmapped": false
+      }
+    }
+  ]
+}
