@@ -16,4 +16,8 @@ public class SearchAttrValue {
     private String attrName;
 //    @Field(type = FieldType.Keyword)
     private String attrValue;
+
+    public static void main(String[] args) {
+        System.out.println(10%2);
+    }
 }
