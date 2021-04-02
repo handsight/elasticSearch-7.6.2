@@ -12,8 +12,18 @@ GET  /goods/_analyze
 PUT /goods
 {
   "settings": {
+    "index.max_ngram_diff": 20,
     "analysis": {
       "filter": {
+        "ngram_filter": {
+          "type": "ngram",
+          "min_gram": 1,
+          "max_gram": 20,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
+        },
         "edge_ngram_filter": {
           "type": "edge_ngram",
           "min_gram": 1,
@@ -73,11 +83,32 @@ PUT /goods
         }
       },
       "analyzer": {
-        "ngramIndexAnalyzer": {
+        "edgeNgramIndexAnalyzer": {
           "type": "custom",
           "tokenizer": "keyword",
           "filter": [
             "edge_ngram_filter",
+            "lowercase"
+          ],
+          "char_filter": [
+            "tsconvert"
+          ]
+        },
+        "edgeNgramSearchAnalyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "lowercase"
+          ],
+          "char_filter": [
+            "tsconvert"
+          ]
+        },
+        "ngramIndexAnalyzer": {
+          "type": "custom",
+          "tokenizer": "keyword",
+          "filter": [
+            "ngram_filter",
             "lowercase"
           ],
           "char_filter": [
@@ -150,10 +181,9 @@ PUT /goods
           "tokenizer": "ik_max_word",
           "filter": [
             "pinyin_filter",
-             "lowercase"
+            "lowercase"
           ]
         }
-
       }
     }
   },
@@ -175,6 +205,11 @@ PUT /goods
             "type": "text",
             "analyzer": "ngramIndexAnalyzer",
             "search_analyzer": "ngramSearchAnalyzer"
+          },
+          "edge_ngram": {
+            "type": "text",
+            "analyzer": "edgeNgramIndexAnalyzer",
+            "search_analyzer": "edgeNgramSearchAnalyzer"
           },
           "full_pinyin": {
             "type": "text",

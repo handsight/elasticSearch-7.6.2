@@ -35,9 +35,45 @@ public class keyWordTest {
    public void test() throws IOException {
         SearchParamVo paramVo = new SearchParamVo();
 
+
+        /**
+         * 数据 刘德华 刘斌 张三 李四 刘德志
+         * 输入 刘    -->刘德华 刘斌 刘德志  李四
+         * 输入 刘德  -->刘德华  刘德志
+         * 输入 刘德华 -->刘德华
+         * 输入 l         刘斌 李四 刘德华 刘德志
+         * 输入 li        刘斌 李四 刘德华 刘德志
+         * 输入 liu       刘斌 刘德华 刘德志
+         * 输入 liud      刘德华  刘德志
+         * 输入 liude     刘德华  刘德志
+         * 输入 liudeh    刘德华
+         * 输入 liudehu   刘德华
+         * 输入 liudehua  刘德华
+         * 输入 ld        刘德华  刘德志
+         * 输入 ldh       刘德华
+         * 输入 d         刘德华   刘德志
+         * 输入 de        刘德华   刘德志
+         * 输入 dehua     刘德华
+         * 输入 dh        刘德华
+         * 输入 h         刘德华
+         * 输入 hua       刘德华
+         * 输入 d志       刘德志
+         * 输入 劉德      刘德华 刘德志
+         * 输入 刘德h     刘德华
+         *
+         *
+         *
+         *数据 观注我 关注我 我关注 系统学ES就关注我
+         * 输入 关zwo 关注我 系统学ES就关注我
+         *
+         *
+         */
         //TODO 输入词去掉 ，；号不然报错，对字数做限制百度不超过38个
-        paramVo.setKeyword("中国馆共分为国家馆和地区馆两部分国家馆主体造型雄浑有力犹如华冠高耸天下粮仓地区馆平台基座汇聚人流寓意社泽神州富庶四方国家馆和地区馆的整体布局隐喻天地交泰万物咸亨中国馆以大红色为主要元素充分体现了中国自古以来以红色为主题的理念更能体现出喜庆的气氛让游客叹为观止");
+//        paramVo.setKeyword("中国馆共分为国家馆和地区馆两部分国家馆主体造型雄浑有力犹如华冠高耸天下粮仓地区馆平台基座汇聚人流寓意社泽神州富庶四方国家馆和地区馆的整体布局隐喻天地交泰万物咸亨中国馆以大红色为主要元素充分体现了中国自古以来以红色为主题的理念更能体现出喜庆的气氛让游客叹为观止");
         paramVo.setKeyword("关zwo");
+//        paramVo.setKeyword("劉德h");
+        paramVo.setKeyword("刘");
+//        paramVo.setKeyword("liud");
         SearchRequest searchRequest = new SearchRequest(new String[]{"goods"}, buildDsl2(paramVo));
         SearchResponse searchResponse = this.restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
 
@@ -86,7 +122,7 @@ public class keyWordTest {
         sourceBuilder.query(boolQuery);
 
         HighlightBuilder highlighter = new HighlightBuilder();
-        highlighter.field("title.ik").field("title.ngram").field("title.full_pinyin").field("title.simple_pinyin").preTags("<font style='color:red'>").postTags("</font>");
+        highlighter.field("title.ik").field("title.ngram").field("title.edge_ngram").field("title.full_pinyin").field("title.simple_pinyin").preTags("<font style='color:red'>").postTags("</font>");
         // 使用该选项根本不会分割文本，高亮显示字段的全部内容
         highlighter.numOfFragments(0);
         sourceBuilder.highlighter(highlighter).highlighter();
@@ -106,6 +142,13 @@ public class keyWordTest {
          * 权重* 5
          */
         QueryBuilder normSearchBuilder=QueryBuilders.matchQuery("title.ngram",words).analyzer("ngramSearchAnalyzer").boost(5f);
+
+
+        /**
+         * 纯中文搜索，不做拼音转换,采用ngram分词(优先级最高)
+         * 权重* 4
+         */
+        QueryBuilder edgeNormSearchBuilder=QueryBuilders.matchQuery("title.edge_ngram",words).analyzer("edgeNgramSearchAnalyzer").boost(4f);
 
         /**
          * 拼音简写搜索
@@ -154,6 +197,7 @@ public class keyWordTest {
 
         disMaxQueryBuilder
                 .add(normSearchBuilder)
+                .add(edgeNormSearchBuilder)
                 .add(pingYinSampleQueryBuilder)
                 .add(containSearchBuilder);
 
