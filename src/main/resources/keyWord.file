@@ -4,17 +4,13 @@ GET /_cat/indices?v
 
 GET  /goods/_analyze
 {
-"analyzer":"ik_max_word",
-"text":"刘德华"
-}
-
-GET  /goods/_analyze
-{
 "analyzer":"customIndexAnalyzer",
 "text":"刘德华"
 }
 
-
+#es分词流程
+#char_filter--->tokenizer--->filter
+#单词 ====》char_filter 预处理 =====》tokenizer分词 ====》 token filter对分出来的词进行再处理。
 
 PUT /goods
 {
