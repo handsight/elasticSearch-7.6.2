@@ -4,9 +4,16 @@ GET /_cat/indices?v
 
 GET  /goods/_analyze
 {
-"analyzer":"suggestIndexAnalyzer",
-"text":"商城"
+"analyzer":"ik_max_word",
+"text":"刘德华"
 }
+
+GET  /goods/_analyze
+{
+"analyzer":"customIndexAnalyzer",
+"text":"刘德华"
+}
+
 
 
 PUT /goods
@@ -82,7 +89,29 @@ PUT /goods
           "convert_type": "t2s"
         }
       },
+      "tokenizer": {
+        "my_tokenizer": {
+          "type": "ngram",
+          "min_gram": 1,
+          "max_gram": 20,
+          "token_chars": [
+            "letter",
+            "digit"
+          ]
+        }
+      },
       "analyzer": {
+        "customIndexAnalyzer": {
+          "type": "custom",
+          "tokenizer": "my_tokenizer",
+          "filter": [
+            "pinyin_filter",
+            "lowercase"
+          ],
+          "char_filter": [
+            "tsconvert"
+          ]
+        },
         "edgeNgramIndexAnalyzer": {
           "type": "custom",
           "tokenizer": "keyword",
@@ -196,6 +225,10 @@ PUT /goods
       "title": {
         "type": "text",
         "fields": {
+          "custom_analyzer": {
+            "type": "text",
+            "analyzer": "customIndexAnalyzer"
+          },
           "ik": {
             "type": "text",
             "analyzer": "ikIndexAnalyzer",
@@ -285,6 +318,19 @@ PUT /goods
 POST /goods/_doc/1
 {"title": "刘德华"}
 
+
+POST /goods/_search
+{
+  "query": {
+    "match": {
+      "title.custom_analyzer": "dh"
+    }
+  }
+
+
+}
+
+
 POST /goods/_doc/2
 {"title": "刘斌"}
 
@@ -318,101 +364,61 @@ POST /goods/_doc/9
 POST /goods/_search
 {
   "query": {
+    "match": {
+      "title.custom_analyzer": {
+        "query": "dehua",
+        "operator": "or"
+      }
+    }
+  }
+}
+
+
+POST /goods/_search
+{
+  "query": {
     "dis_max": {
       "tie_breaker": 0,
       "queries": [
         {
           "match": {
-            "title.ngram": {
-              "query": "关zwo",
-              "operator": "OR",
-              "analyzer": "ngramSearchAnalyzer",
+            "title.custom_analyzer": {
+              "query": "dehua",
+              "operator": "and",
+              "analyzer": "customIndexAnalyzer",
               "prefix_length": 0,
               "max_expansions": 50,
               "fuzzy_transpositions": true,
               "lenient": false,
               "zero_terms_query": "NONE",
               "auto_generate_synonyms_phrase_query": true,
-              "boost": 5
-            }
-          }
-        },
-        {
-          "term": {
-            "title.simple_pinyin": {
-              "value": "gzwo",
-              "boost": 1
-            }
-          }
-        },
-        {
-          "match": {
-            "title": {
-              "query": "关zwo",
-              "operator": "OR",
-              "analyzer": "ikSearchAnalyzer",
-              "prefix_length": 0,
-              "max_expansions": 50,
-              "minimum_should_match": "100%",
-              "fuzzy_transpositions": true,
-              "lenient": false,
-              "zero_terms_query": "NONE",
-              "auto_generate_synonyms_phrase_query": true,
-              "boost": 1
-            }
-          }
-        },
-        {
-          "bool": {
-            "must": [
-              {
-                "match_phrase": {
-                  "title.full_pinyin": {
-                    "query": "关zwo",
-                    "analyzer": "fullPinyinSearchAnalyzer",
-                    "slop": 0,
-                    "zero_terms_query": "NONE",
-                    "boost": 1
-                  }
-                }
-              }
-            ],
-            "filter": [
-              {
-                "match": {
-                  "title.full_pinyin": {
-                    "query": "关",
-                    "operator": "OR",
-                    "analyzer": "standard",
-                    "prefix_length": 0,
-                    "max_expansions": 50,
-                    "minimum_should_match": "100%",
-                    "fuzzy_transpositions": true,
-                    "lenient": false,
-                    "zero_terms_query": "NONE",
-                    "auto_generate_synonyms_phrase_query": true,
-                    "boost": 1
-                  }
-                }
-              }
-            ],
-            "adjust_pure_negative": true,
-            "boost": 1
-          }
-        },
-        {
-          "wildcard": {
-            "title.simple_pinyin": {
-              "wildcard": "*gzwo*",
-              "boost": 0.8
+              "boost": 6
             }
           }
         }
       ],
       "boost": 1
     }
+  },
+  "highlight": {
+    "pre_tags": [
+      "<font style='color:red'>"
+    ],
+    "post_tags": [
+      "</font>"
+    ],
+    "number_of_fragments": 0,
+    "fields": {
+      "title.custom_analyzer": {},
+      "title.ik": {},
+      "title.ngram": {},
+      "title.edge_ngram": {},
+      "title.full_pinyin": {},
+      "title.simple_pinyin": {}
+    }
   }
 }
+
 
 
 

@@ -70,9 +70,9 @@ public class keyWordTest {
          */
         //TODO 输入词去掉 ，；号不然报错，对字数做限制百度不超过38个
 //        paramVo.setKeyword("中国馆共分为国家馆和地区馆两部分国家馆主体造型雄浑有力犹如华冠高耸天下粮仓地区馆平台基座汇聚人流寓意社泽神州富庶四方国家馆和地区馆的整体布局隐喻天地交泰万物咸亨中国馆以大红色为主要元素充分体现了中国自古以来以红色为主题的理念更能体现出喜庆的气氛让游客叹为观止");
-        paramVo.setKeyword("关zwo");
+//        paramVo.setKeyword("关zwo");
 //        paramVo.setKeyword("劉德h");
-        paramVo.setKeyword("刘");
+        paramVo.setKeyword("de");
 //        paramVo.setKeyword("liud");
         SearchRequest searchRequest = new SearchRequest(new String[]{"goods"}, buildDsl2(paramVo));
         SearchResponse searchResponse = this.restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
@@ -122,7 +122,7 @@ public class keyWordTest {
         sourceBuilder.query(boolQuery);
 
         HighlightBuilder highlighter = new HighlightBuilder();
-        highlighter.field("title.ik").field("title.ngram").field("title.edge_ngram").field("title.full_pinyin").field("title.simple_pinyin").preTags("<font style='color:red'>").postTags("</font>");
+        highlighter.field("title.custom_analyzer").field("title.ik").field("title.ngram").field("title.edge_ngram").field("title.full_pinyin").field("title.simple_pinyin").preTags("<font style='color:red'>").postTags("</font>");
         // 使用该选项根本不会分割文本，高亮显示字段的全部内容
         highlighter.numOfFragments(0);
         sourceBuilder.highlighter(highlighter).highlighter();
@@ -136,6 +136,9 @@ public class keyWordTest {
 
         //使用dis_max直接取多个query中，分数最高的那一个query的分数即可
         DisMaxQueryBuilder disMaxQueryBuilder= QueryBuilders.disMaxQuery();
+
+        QueryBuilder customSearchBuilder=QueryBuilders.matchQuery("title.custom_analyzer",words).analyzer("customIndexAnalyzer").boost(6f);
+
 
         /**
          * 纯中文搜索，不做拼音转换,采用edge_ngram分词(优先级最高)
@@ -196,18 +199,19 @@ public class keyWordTest {
         QueryBuilder containSearchBuilder=QueryBuilders.matchQuery("title", words).analyzer("ikSearchAnalyzer").minimumShouldMatch("100%");
 
         disMaxQueryBuilder
-                .add(normSearchBuilder)
-                .add(edgeNormSearchBuilder)
-                .add(pingYinSampleQueryBuilder)
-                .add(containSearchBuilder);
+                .add(customSearchBuilder);
+//                .add(normSearchBuilder)
+//                .add(edgeNormSearchBuilder)
+//                .add(pingYinSampleQueryBuilder)
+//                .add(containSearchBuilder);
 
         //以下两个对性能有一定的影响，故作此判定，单个字符不执行此类搜索
-        if(pingYinFullQueryBuilder!=null){
-            disMaxQueryBuilder.add(pingYinFullQueryBuilder);
-        }
-        if(pingYinSampleContainQueryBuilder!=null){
-            disMaxQueryBuilder.add(pingYinSampleContainQueryBuilder);
-        }
+//        if(pingYinFullQueryBuilder!=null){
+//            disMaxQueryBuilder.add(pingYinFullQueryBuilder);
+//        }
+//        if(pingYinSampleContainQueryBuilder!=null){
+//            disMaxQueryBuilder.add(pingYinSampleContainQueryBuilder);
+//        }
         return disMaxQueryBuilder;
     }
 }
