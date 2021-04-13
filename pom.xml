@@ -20,6 +20,13 @@
 
     <dependencies>
 
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>3.11.2</version>
+        </dependency>
+
+
 
         <!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
         <dependency>
