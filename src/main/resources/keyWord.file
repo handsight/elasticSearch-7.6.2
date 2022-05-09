@@ -11,7 +11,10 @@ GET  /goods/_analyze
 #es分词流程
 #char_filter--->tokenizer--->filter
 #单词 ====》char_filter 预处理 =====》tokenizer分词 ====》 token filter对分出来的词进行再处理。
-#举例：刘德华先经过char_filter 繁体转简体  再经过tokenizer的ngram方式金字塔拆词（刘,刘德,刘德华,德,德华,华）
+#举例：customIndexAnalyzer
+1刘德华先经过char_filter的tsconvert进行繁体转简体
+2再经过tokenizer的my_tokenizer的ngram方式金字塔拆词（刘,刘德,刘德华,德,德华,华）
+3最后对第二步拆出来的词 （刘,刘德,刘德华,德,德华,华）进行使用pinyin_filter、lowercase进行过滤
 
 
 
